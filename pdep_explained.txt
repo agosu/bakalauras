@@ -1,0 +1,53 @@
+PSEUDO ALGORITHM:
+	1. get current directory path
+	2. PACKAGE = everything that is after ...src/main/java/ with / replaced with .
+	3. for every i = subdirectory of current directory
+		a) search all files (including in all subdirectories) and get all import PACKAGE.name
+		b) sort and leave only unique
+		c) remove static imports
+		d) get only names
+		e) remove all names that are i
+		f) replace all names with i -> name (output)
+		g) if there are any imports PACKAGE.SomeClass, write to file i -> <root>
+		h) write output to file
+	4. for every .java file in PACKAGE directory:
+		a) get all import PACKAGE.name (discard any errors)
+		b) sort and leave only unique
+		c) remove static imports
+		d) get only names
+		e) replace all names with <root> -> name (output)
+		f) write output to file
+
+DETAILED NOTES
+PACKAGE=`pwd | sed "s/.*src\/main\/java\/\(.*\)/\1/" | sed "s/\//./g"`
+pwd - /c/src/bakis/junit4/src/main/java/org/junit
+sed "s/.*src\/main\/java\/\(.*\)/\1/" - replace .*src/main/java/(.*) with (.*)
+sed "s/\//./g" - replace all / with .
+PACKAGE=org.junit
+
+for i in `ls | grep -v \.java` - i is list of all directories and files, except .java files
+so in our case, all internal packages of a PACKAGE.
+
+i = internal/
+
+grep -roh "import $PACKAGE.[a-z][^.]*" $i | sort| uniq | grep -v static | sed "s/import $PACKAGE.\([a-z][^.]*\).*/\1/" | grep -v $i | sed "s/\(.*\)/\"$i\" -> \"\1\"/";
+grep -roh "import $PACKAGE.[a-z][^.]*" $i - prints all matched (until first word after PACKAGE) in ALL internal/.. files
+
+-r without it error: internal/ is a directory
+-o Print only the matched parts of a matching line, with each such part on a separate output line.
+-h Display the matched lines, but do not display the filenames
+
+grep -v static - removes static imports?
+sed "s/import $PACKAGE.\([a-z][^.]*\).*/\1/" - replace import org.junit.([a-z][^.]*).* with ([a-z][^.]*) - take only first word after the PACKAGE
+grep -v $i - remove all internal/ - because if child package imports internal/, it does not give any additional dependency
+sed "s/\(.*\)/\"$i\" -> \"\1\"/" - replace (.*) with internal/ -> (.*)
+
+result: internal/ -> rules, internal/ -> runner, internal/ -> runners
+
+if grep -roh "import $PACKAGE.[A-Z][^.]*" $i >/dev/null - if something is matched (imports PACKAGE.SomeClass) - discard and do:
+echo "\"$i\" -> \"<root>\"" >>dependencies.dot - then internal/ imports something from root package
+
+done >>dependencies.dot writes output of all for loop
+
+grep -oh "import $PACKAGE.[a-z][^.]*" *java 2>/dev/null| sort| uniq | grep -v static | sed "s/import $PACKAGE.\([a-z][^.]*\).*/\1/" | sed "s/\(.*\)/\"<root>\" -> \"\1\"/" >>dependencies.dot;
+grep -oh "import $PACKAGE.[a-z][^.]*" *java 2>/dev/null - takes all imports from java files in root (until first word after PACKAGE) and discards all stderr
