@@ -1,0 +1,42 @@
+package agosu.bachelor.archunit;
+
+import com.tngtech.archunit.PublicAPI;
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
+
+import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
+import static com.tngtech.archunit.thirdparty.com.google.common.base.Preconditions.checkState;
+import static com.tngtech.archunit.thirdparty.com.google.common.base.Strings.isNullOrEmpty;
+
+public abstract class AbstractFPackageDefinition {
+
+    private final String name;
+    protected DescribedPredicate<JavaClass> containsPredicate;
+
+    AbstractFPackageDefinition(String name) {
+        checkState(!isNullOrEmpty(name), "FPackage name must be present");
+        this.name = name;
+    }
+
+    public abstract CustomArchitectures.FunctionalArchitecture definedBy(DescribedPredicate<? super JavaClass> predicate);
+
+    @PublicAPI(usage = ACCESS)
+    public CustomArchitectures.FunctionalArchitecture definedBy(String... packageIdentifiers) {
+        return definedBy(resideInAnyPackage(packageIdentifiers));
+    }
+
+    DescribedPredicate<JavaClass> containsPredicate() {
+        return containsPredicate;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("FPackage '%s' (%s)", name, containsPredicate);
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+}
