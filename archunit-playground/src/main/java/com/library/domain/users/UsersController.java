@@ -8,8 +8,6 @@ import com.library.domain.users.permissions.PermissionsService;
 
 public class UsersController {
 
-    //public String test;
-
     public UsersController() {
 
     }

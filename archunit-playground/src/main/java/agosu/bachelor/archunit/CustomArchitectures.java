@@ -11,12 +11,16 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Joiner;
 
 import java.util.*;
 
+import static agosu.bachelor.archunit.Constants.SYSTEM_PATH;
+import static agosu.bachelor.archunit.CustomPredicates.areDirectRootChildrenOf;
 import static agosu.bachelor.archunit.CustomPredicates.areInParentPackageOf;
+import static agosu.bachelor.archunit.CustomTransformers.packages;
 import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
 import static com.tngtech.archunit.base.DescribedPredicate.alwaysFalse;
 import static com.tngtech.archunit.core.domain.Dependency.Predicates.*;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDependenciesWhere;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDependentsWhere;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.all;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.thirdparty.com.google.common.base.Preconditions.*;
 import static com.tngtech.archunit.thirdparty.com.google.common.collect.Lists.newArrayList;
@@ -115,6 +119,7 @@ public final class CustomArchitectures {
         public EvaluationResult evaluate(JavaClasses classes) {
             EvaluationResult result = new EvaluationResult(this, Priority.MEDIUM);
             checkEmptyFPackages(classes, result);
+            checkNoUpperLayerPackageIsLayer(classes, result);
             checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(classes, result);
             switch (this.dependencyDirection) {
                 case UP:
@@ -130,6 +135,12 @@ public final class CustomArchitectures {
                 result.add(evaluateDependenciesShouldBeSatisfied(classes, specification));
             }
             return result;
+        }
+
+        private void checkNoUpperLayerPackageIsLayer(JavaClasses javaClasses, EvaluationResult result) {
+            result.add(
+                    all(packages).that(areDirectRootChildrenOf(SYSTEM_PATH)).should(notBeLayers).evaluate(javaClasses)
+            );
         }
 
         private void checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(JavaClasses classes, EvaluationResult result) {
