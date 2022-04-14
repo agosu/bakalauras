@@ -1,8 +1,8 @@
-#Funkcinė architektūra
+# Funkcinė architektūra
 <i>archunit-playground</i> repozitorijos dalyje pateikiamas <i>ArchUnit</i> bibliotekos plėtinys - funkcinės paketų strategijos
 taisyklių apibrėžimas ir tikrinimas.
 
-##<i>FunctionalArchitecture</i> klasė
+## <i>FunctionalArchitecture</i> klasė
 Viena pagrindinių šios architektūros sąvokų - <i>FPackage</i> esybė. Ši sąvoka apibrėžia funkcinį paketą.
 Architektūros įgyvendinimas leidžia apibrėžti kelis ar daugiau sistemos <i>FPackage</i> bei galimus jų tarpusavio
 ryšius. Pagal numatytąją konfigūraciją <i>FPackage</i> negali kreiptis į jokį kitą <i>FPackage</i>, jeigu nenurodyta kitaip.
@@ -79,11 +79,11 @@ Bibliotekos praplėtimui testuoti buvo sukurta paprasta paketų struktūra <i>co
 Paketų struktūros taisyklės įgyvendintos apibrėžiant abstrakčių <i>ArchUnit</i> bibliotekos
 klasių veikimą.
 
-###CustomTransformers
+### CustomTransformers
 Leidžia apibrėžti <i>JavaClasses</i> transformacija į bet kokias kitas esybes (pavyzdžiui: paketus, domenus).
 
-###CustomPredicates
+### CustomPredicates
 Leidžia apibrėžti tam tikros esybės atitikimą tam tikroms sąlygoms (pavyzdžiui: ar klasė yra apibrėžtos sistemos viduje).
 
-###CustomConditions
+### CustomConditions
 Leidžia apibrėžti sąlygas, kurias turi atitikti esybės.
