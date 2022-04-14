@@ -18,6 +18,7 @@ public abstract class AbstractFPackageDependencySpecification {
 
     AbstractFPackageDependencySpecification(String fPackageName) {
         this.fPackageName = fPackageName;
+        this.descriptionSuffix = "";
     }
 
     public abstract CustomArchitectures.FunctionalArchitecture denyFPackageAccess(FPackageDependencyConstraint constraint, String description);
@@ -35,7 +36,7 @@ public abstract class AbstractFPackageDependencySpecification {
 
     /**
      * Restricts this FPackage to only allow the specified FPackages to have {@link Dependency dependencies} to this FPackage.
-     * @param fPackageNames the names of other FPackages (as specified by {@link #fPackage(String)}) that may access this FPackage
+     * @param fPackageNames the names of other FPackages that may access this FPackage
      * @return a {@link CustomArchitectures.FunctionalArchitecture} to be used as an {@link ArchRule} or further restricted through a fluent API.
      */
     @PublicAPI(usage = ACCESS)
@@ -54,7 +55,7 @@ public abstract class AbstractFPackageDependencySpecification {
 
     /**
      * Restricts this FPackage to only allow {@link Dependency dependencies} to the specified FPackages.
-     * @param fPackageNames the only names of other FPackages (as specified by {@link #fPackage(String)}) that this FPackage may access
+     * @param fPackageNames the only names of other FPackages that this FPackage may access
      * @return a {@link CustomArchitectures.FunctionalArchitecture} to be used as an {@link ArchRule} or further restricted through a fluent API.
      */
     @PublicAPI(usage = ACCESS)

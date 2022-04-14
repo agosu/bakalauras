@@ -6,23 +6,25 @@ import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.lang.*;
+import com.tngtech.archunit.lang.syntax.PredicateAggregator;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Joiner;
 
 import java.util.*;
 
+import static agosu.bachelor.archunit.CustomPredicates.areInParentPackageOf;
 import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
 import static com.tngtech.archunit.base.DescribedPredicate.alwaysFalse;
 import static com.tngtech.archunit.core.domain.Dependency.Predicates.*;
-import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDependenciesWhere;
 import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDependentsWhere;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.thirdparty.com.google.common.base.Preconditions.*;
-import static com.tngtech.archunit.thirdparty.com.google.common.base.Strings.isNullOrEmpty;
 import static com.tngtech.archunit.thirdparty.com.google.common.collect.Lists.newArrayList;
 import static java.lang.System.lineSeparator;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
+
+import static agosu.bachelor.archunit.CustomConditions.*;
 
 public final class CustomArchitectures {
 
@@ -37,26 +39,40 @@ public final class CustomArchitectures {
 
         private final FPackageDefinitions fPackageDefinitions;
         private final Set<FPackageDependencySpecification> dependencySpecifications;
+        private final PredicateAggregator<Dependency> irrelevantDependenciesPredicate;
+        private final DependencyDirection dependencyDirection;
+        private final Set<String> groups;
 
         private FunctionalArchitecture() {
             this(
                     new FPackageDefinitions(),
+                    new LinkedHashSet<>(),
+                    new PredicateAggregator<Dependency>().thatORs(),
+                    DependencyDirection.BOTH,
                     new LinkedHashSet<>()
             );
         }
 
         private FunctionalArchitecture(
                 FPackageDefinitions fPackageDefinitions,
-                Set<FPackageDependencySpecification> dependencySpecifications) {
+                Set<FPackageDependencySpecification> dependencySpecifications,
+                PredicateAggregator<Dependency> irrelevantDependenciesPredicate,
+                DependencyDirection dependencyDirection, Set<String> groups) {
             this.fPackageDefinitions = fPackageDefinitions;
             this.dependencySpecifications = dependencySpecifications;
+            this.irrelevantDependenciesPredicate = irrelevantDependenciesPredicate;
+            this.dependencyDirection = dependencyDirection;
+            this.groups = groups;
         }
 
         @PublicAPI(usage = ACCESS)
         public FunctionalArchitecture inFunctionalArchitecture() {
             return new FunctionalArchitecture(
                     fPackageDefinitions,
-                    dependencySpecifications
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate,
+                    dependencyDirection,
+                    groups
             );
         }
 
@@ -99,16 +115,49 @@ public final class CustomArchitectures {
         public EvaluationResult evaluate(JavaClasses classes) {
             EvaluationResult result = new EvaluationResult(this, Priority.MEDIUM);
             checkEmptyFPackages(classes, result);
+            checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(classes, result);
+            switch (this.dependencyDirection) {
+                case UP:
+                    checkDependencyDirectionUp(classes, result);
+                    break;
+                case DOWN:
+                    checkDependencyDirectionDown(classes, result);
+                    break;
+                default:
+                    break;
+            }
             for (FPackageDependencySpecification specification : dependencySpecifications) {
                 result.add(evaluateDependenciesShouldBeSatisfied(classes, specification));
             }
             return result;
         }
 
+        private void checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(JavaClasses classes, EvaluationResult result) {
+            List<String> fPackages = new ArrayList<>();
+            for (FPackageDefinition fPackageDefinition : this.fPackageDefinitions) {
+                fPackages.add(fPackageDefinition.thePackage);
+            }
+            result.add(
+                classes().should().resideInAnyPackage(this.groups.toArray(new String[]{})).orShould(beInAnyOfPackages(fPackages)).evaluate(classes)
+            );
+        }
+
         private void checkEmptyFPackages(JavaClasses classes, EvaluationResult result) {
             for (FPackageDefinition definition : fPackageDefinitions) {
                 result.add(evaluateFPackagesShouldNotBeEmpty(classes, definition));
             }
+        }
+
+        private void checkDependencyDirectionUp(JavaClasses classes, EvaluationResult result) {
+            result.add(
+                classes().should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage).evaluate(classes)
+            );
+        }
+
+        private void checkDependencyDirectionDown(JavaClasses classes, EvaluationResult result) {
+            result.add(
+                classes().should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage).evaluate(classes)
+            );
         }
 
         private EvaluationResult evaluateFPackagesShouldNotBeEmpty(JavaClasses classes, FPackageDefinition definition) {
@@ -130,22 +179,27 @@ public final class CustomArchitectures {
 
         private DescribedPredicate<Dependency> originMatchesIfDependencyIsRelevant(String ownFPackage, Set<String> allowedAccessors) {
             DescribedPredicate<Dependency> originPackageMatches =
-                    dependencyOrigin(fPackageDefinitions.containsPredicateFor(allowedAccessors))
+                    dependencyOrigin(fPackageDefinitions.excludeSubpackagePredicateFor(allowedAccessors))
                             .or(dependencyOrigin(fPackageDefinitions.containsPredicateFor(ownFPackage)));
 
             return ifDependencyIsRelevant(originPackageMatches);
         }
 
         private DescribedPredicate<Dependency> targetMatchesIfDependencyIsRelevant(String ownFPackage, Set<String> allowedTargets) {
+            String thePackage = this.fPackageDefinitions.get(ownFPackage).thePackage;
+            String thePackageExcludingSubpackages = thePackage.substring(0, thePackage.length() - 2);
             DescribedPredicate<Dependency> targetPackageMatches =
-                    dependencyTarget(fPackageDefinitions.containsPredicateFor(allowedTargets))
-                            .or(dependencyTarget(fPackageDefinitions.containsPredicateFor(ownFPackage)));
+                    dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
+                            .or(dependencyTarget(fPackageDefinitions.containsPredicateFor(ownFPackage)))
+                            .or(dependencyTarget(areInParentPackageOf(thePackageExcludingSubpackages)));
 
             return ifDependencyIsRelevant(targetPackageMatches);
         }
 
         private DescribedPredicate<Dependency> ifDependencyIsRelevant(DescribedPredicate<Dependency> originPackageMatches) {
-            return originPackageMatches;
+            return irrelevantDependenciesPredicate.isPresent() ?
+                    originPackageMatches.or(irrelevantDependenciesPredicate.get()) :
+                    originPackageMatches;
         }
 
         @Override
@@ -170,8 +224,51 @@ public final class CustomArchitectures {
         public FunctionalArchitecture as(String newDescription) {
             return new FunctionalArchitecture(
                     fPackageDefinitions,
-                    dependencySpecifications
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate,
+                    dependencyDirection,
+                    groups
             );
+        }
+
+
+        @PublicAPI(usage = ACCESS)
+        public FunctionalArchitecture ignoreDependency(
+                DescribedPredicate<? super JavaClass> origin, DescribedPredicate<? super JavaClass> target) {
+            return new FunctionalArchitecture(
+                    fPackageDefinitions,
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate.add(dependency(origin, target)),
+                    dependencyDirection,
+                    groups
+            );
+        }
+
+        @PublicAPI(usage = ACCESS)
+        public FunctionalArchitecture whereDependencyDirectionDown() {
+            return new FunctionalArchitecture(
+                    fPackageDefinitions,
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate,
+                    DependencyDirection.DOWN,
+                    groups
+            );
+        }
+
+        @PublicAPI(usage = ACCESS)
+        public FunctionalArchitecture whereDependencyDirectionUp() {
+            return new FunctionalArchitecture(
+                    fPackageDefinitions,
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate,
+                    DependencyDirection.UP,
+                    groups
+            );
+        }
+
+        public FunctionalArchitecture whereGroup(String thePackage) {
+            groups.add(thePackage);
+            return this;
         }
 
         /**
@@ -223,6 +320,22 @@ public final class CustomArchitectures {
                 return result;
             }
 
+            DescribedPredicate<JavaClass> excludeSubpackagePredicateFor(String fPackageName) {
+                return excludeSubpackagePredicateFor(singleton(fPackageName));
+            }
+
+            DescribedPredicate<JavaClass> excludeSubpackagePredicateFor(final Collection<String> fPackageNames) {
+                DescribedPredicate<JavaClass> result = alwaysFalse();
+                for (FPackageDefinition definition : get(fPackageNames)) {
+                    result = result.or(definition.excludeSubpackagePredicate());
+                }
+                return result;
+            }
+
+            FPackageDefinition get(String fPackageName) {
+                return fPackageDefinitions.get(fPackageName);
+            }
+
             private Iterable<FPackageDefinition> get(Collection<String> fPackageNames) {
                 Set<FPackageDefinition> result = new HashSet<>();
                 for (String fPackageName : fPackageNames) {
@@ -247,9 +360,16 @@ public final class CustomArchitectures {
              * Defines an FPackage by a predicate, i.e. any {@link JavaClass} that will match the predicate will belong to this FPackage.
              */
             @PublicAPI(usage = ACCESS)
-            public FunctionalArchitecture definedBy(DescribedPredicate<? super JavaClass> predicate) {
-                checkNotNull(predicate, "Supplied predicate must not be null");
-                this.containsPredicate = predicate.forSubtype();
+            public FunctionalArchitecture definedBy(
+                    String thePackage,
+                    DescribedPredicate<? super JavaClass> containsPredicate,
+                    DescribedPredicate<? super JavaClass> excludeSubpackagePredicate) {
+                checkNotNull(containsPredicate, "Supplied containsPredicate must not be null");
+                checkNotNull(containsPredicate, "Supplied excludeSubpackagePredicate must not be null");
+                this.thePackage = thePackage;
+                this.containsPredicate = containsPredicate.forSubtype();
+                this.excludeSubpackagePredicate = excludeSubpackagePredicate.forSubtype();
+                FunctionalArchitecture.this.addDependencySpecification(new FPackageDependencySpecification(this.getName()));
                 return FunctionalArchitecture.this.addFPackageDefinition(this);
             }
         }
