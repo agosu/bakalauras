@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
-import static com.tngtech.archunit.thirdparty.com.google.common.base.Preconditions.checkState;
-import static com.tngtech.archunit.thirdparty.com.google.common.base.Strings.isNullOrEmpty;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Strings.isNullOrEmpty;
 
 public abstract class AbstractFPackageDefinition {
 

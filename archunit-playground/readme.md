@@ -34,6 +34,7 @@ Laukai:
     <li>dependencyDirection: leidžia apibrėžti, kurios krypties (UP, DOWN, BOTH) priklausomybės tarp paketų leidžiamos
     sistemoje. Numatytoji reikšmė: <i>BOTH</i></li>
     <li><i>groups</i>: leidžia apibrėžti paketus, kurių pagalba grupuojami <i>FPackage</i> (pavyzdžiui <i>domain</i> ir <i>infrastructure</i>)</li>
+    <li><i>systemRoot</i>: leidžia apibrėžti analizuojamos sistemos ribas</li>
 </ul>
 
 <i>FunctionalArchitecture</i> apibrėžimo ir testavimo pavyzdys:
@@ -79,11 +80,11 @@ Bibliotekos praplėtimui testuoti buvo sukurta paprasta paketų struktūra <i>co
 Paketų struktūros taisyklės įgyvendintos apibrėžiant abstrakčių <i>ArchUnit</i> bibliotekos
 klasių veikimą.
 
-### CustomTransformers
+### ClassTransformer
 Leidžia apibrėžti <i>JavaClasses</i> transformacija į bet kokias kitas esybes (pavyzdžiui: paketus, domenus).
 
-### CustomPredicates
-Leidžia apibrėžti tam tikros esybės atitikimą tam tikroms sąlygoms (pavyzdžiui: ar klasė yra apibrėžtos sistemos viduje).
+### DescribedPredicate
+Leidžia apibrėžti tam tikros esybės atitikimą tam tikroms sąvybėms (pavyzdžiui, išfiltruoti visas klases, kurių pavadinime yra žodis Book).
 
-### CustomConditions
+### ArchCondition
 Leidžia apibrėžti sąlygas, kurias turi atitikti esybės.

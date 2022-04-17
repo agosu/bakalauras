@@ -7,11 +7,10 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.lang.*;
 import com.tngtech.archunit.lang.syntax.PredicateAggregator;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Joiner;
+import com.google.common.base.Joiner;
 
 import java.util.*;
 
-import static agosu.bachelor.archunit.Constants.SYSTEM_PATH;
 import static agosu.bachelor.archunit.CustomPredicates.areDirectRootChildrenOf;
 import static agosu.bachelor.archunit.CustomPredicates.areInParentPackageOf;
 import static agosu.bachelor.archunit.CustomTransformers.packages;
@@ -22,8 +21,8 @@ import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDepend
 import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDependentsWhere;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.all;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.thirdparty.com.google.common.base.Preconditions.*;
-import static com.tngtech.archunit.thirdparty.com.google.common.collect.Lists.newArrayList;
+import static com.google.common.base.Preconditions.*;
+import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.System.lineSeparator;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -46,6 +45,7 @@ public final class CustomArchitectures {
         private final PredicateAggregator<Dependency> irrelevantDependenciesPredicate;
         private final DependencyDirection dependencyDirection;
         private final Set<String> groups;
+        private final String systemRoot;
 
         private FunctionalArchitecture() {
             this(
@@ -53,7 +53,8 @@ public final class CustomArchitectures {
                     new LinkedHashSet<>(),
                     new PredicateAggregator<Dependency>().thatORs(),
                     DependencyDirection.BOTH,
-                    new LinkedHashSet<>()
+                    new LinkedHashSet<>(),
+                    ""
             );
         }
 
@@ -61,12 +62,15 @@ public final class CustomArchitectures {
                 FPackageDefinitions fPackageDefinitions,
                 Set<FPackageDependencySpecification> dependencySpecifications,
                 PredicateAggregator<Dependency> irrelevantDependenciesPredicate,
-                DependencyDirection dependencyDirection, Set<String> groups) {
+                DependencyDirection dependencyDirection,
+                Set<String> groups,
+                String systemRoot) {
             this.fPackageDefinitions = fPackageDefinitions;
             this.dependencySpecifications = dependencySpecifications;
             this.irrelevantDependenciesPredicate = irrelevantDependenciesPredicate;
             this.dependencyDirection = dependencyDirection;
             this.groups = groups;
+            this.systemRoot = systemRoot;
         }
 
         @PublicAPI(usage = ACCESS)
@@ -76,7 +80,8 @@ public final class CustomArchitectures {
                     dependencySpecifications,
                     irrelevantDependenciesPredicate,
                     dependencyDirection,
-                    groups
+                    groups,
+                    systemRoot
             );
         }
 
@@ -139,7 +144,7 @@ public final class CustomArchitectures {
 
         private void checkNoUpperLayerPackageIsLayer(JavaClasses javaClasses, EvaluationResult result) {
             result.add(
-                    all(packages).that(areDirectRootChildrenOf(SYSTEM_PATH)).should(notBeLayers).evaluate(javaClasses)
+                    all(packages).that(areDirectRootChildrenOf(this.systemRoot)).should(notBeLayers).evaluate(javaClasses)
             );
         }
 
@@ -238,7 +243,8 @@ public final class CustomArchitectures {
                     dependencySpecifications,
                     irrelevantDependenciesPredicate,
                     dependencyDirection,
-                    groups
+                    groups,
+                    systemRoot
             );
         }
 
@@ -251,10 +257,24 @@ public final class CustomArchitectures {
                     dependencySpecifications,
                     irrelevantDependenciesPredicate.add(dependency(origin, target)),
                     dependencyDirection,
-                    groups
+                    groups,
+                    systemRoot
             );
         }
 
+        @PublicAPI(usage = ACCESS)
+        public FunctionalArchitecture whereSystemRoot(String systemRoot) {
+            return new FunctionalArchitecture(
+                    fPackageDefinitions,
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate,
+                    dependencyDirection,
+                    groups,
+                    systemRoot
+            );
+        }
+
+        // Should be called before other constraint declarations (such as whereFPackage())
         @PublicAPI(usage = ACCESS)
         public FunctionalArchitecture whereDependencyDirectionDown() {
             return new FunctionalArchitecture(
@@ -262,10 +282,12 @@ public final class CustomArchitectures {
                     dependencySpecifications,
                     irrelevantDependenciesPredicate,
                     DependencyDirection.DOWN,
-                    groups
+                    groups,
+                    systemRoot
             );
         }
 
+        // Should be called before other constraint declarations (such as whereFPackage())
         @PublicAPI(usage = ACCESS)
         public FunctionalArchitecture whereDependencyDirectionUp() {
             return new FunctionalArchitecture(
@@ -273,7 +295,8 @@ public final class CustomArchitectures {
                     dependencySpecifications,
                     irrelevantDependenciesPredicate,
                     DependencyDirection.UP,
-                    groups
+                    groups,
+                    systemRoot
             );
         }
 

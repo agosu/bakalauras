@@ -118,7 +118,9 @@ public class CustomConditions {
         @Override
         public void check(JavaClass clazz, ConditionEvents events) {
             List<Dependency> dependenciesThatResideNotInTheSamePackage = clazz.getDirectDependenciesFromSelf().stream()
-                    .filter(it -> !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) && it.getTargetClass().getPackageName().contains("com.library"))
+                    .filter(it ->
+                            !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
+                                    it.getTargetClass().getPackageName().contains("com.library"))
                     .collect(toList());
 
             if (!dependenciesThatResideNotInTheSamePackage.isEmpty()) {
