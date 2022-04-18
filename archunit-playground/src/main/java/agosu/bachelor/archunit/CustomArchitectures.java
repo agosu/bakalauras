@@ -47,6 +47,8 @@ public final class CustomArchitectures {
         private final Set<String> groups;
         private final String systemRoot;
 
+        private final boolean fPackagesOn;
+
         private FunctionalArchitecture() {
             this(
                     new FPackageDefinitions(),
@@ -54,7 +56,8 @@ public final class CustomArchitectures {
                     new PredicateAggregator<Dependency>().thatORs(),
                     DependencyDirection.BOTH,
                     new LinkedHashSet<>(),
-                    ""
+                    "",
+                    true
             );
         }
 
@@ -64,13 +67,15 @@ public final class CustomArchitectures {
                 PredicateAggregator<Dependency> irrelevantDependenciesPredicate,
                 DependencyDirection dependencyDirection,
                 Set<String> groups,
-                String systemRoot) {
+                String systemRoot,
+                boolean fPackagesOn) {
             this.fPackageDefinitions = fPackageDefinitions;
             this.dependencySpecifications = dependencySpecifications;
             this.irrelevantDependenciesPredicate = irrelevantDependenciesPredicate;
             this.dependencyDirection = dependencyDirection;
             this.groups = groups;
             this.systemRoot = systemRoot;
+            this.fPackagesOn = fPackagesOn;
         }
 
         @PublicAPI(usage = ACCESS)
@@ -81,7 +86,8 @@ public final class CustomArchitectures {
                     irrelevantDependenciesPredicate,
                     dependencyDirection,
                     groups,
-                    systemRoot
+                    systemRoot,
+                    fPackagesOn
             );
         }
 
@@ -125,7 +131,9 @@ public final class CustomArchitectures {
             EvaluationResult result = new EvaluationResult(this, Priority.MEDIUM);
             checkEmptyFPackages(classes, result);
             checkNoUpperLayerPackageIsLayer(classes, result);
-            checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(classes, result);
+            if (fPackagesOn) {
+                checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(classes, result);
+            }
             switch (this.dependencyDirection) {
                 case UP:
                     checkDependencyDirectionUp(classes, result);
@@ -144,7 +152,10 @@ public final class CustomArchitectures {
 
         private void checkNoUpperLayerPackageIsLayer(JavaClasses javaClasses, EvaluationResult result) {
             result.add(
-                    all(packages).that(areDirectRootChildrenOf(this.systemRoot)).should(notBeLayers).evaluate(javaClasses)
+                    all(packages)
+                            .that(areDirectRootChildrenOf(this.systemRoot))
+                            .should(notBeLayers)
+                            .evaluate(javaClasses)
             );
         }
 
@@ -154,7 +165,11 @@ public final class CustomArchitectures {
                 fPackages.add(fPackageDefinition.thePackage);
             }
             result.add(
-                classes().should().resideInAnyPackage(this.groups.toArray(new String[]{})).orShould(beInAnyOfPackages(fPackages)).evaluate(classes)
+                classes()
+                        .should()
+                        .resideInAnyPackage(this.groups.toArray(new String[]{}))
+                        .orShould(beInAnyOfPackages(fPackages))
+                        .evaluate(classes)
             );
         }
 
@@ -166,13 +181,17 @@ public final class CustomArchitectures {
 
         private void checkDependencyDirectionUp(JavaClasses classes, EvaluationResult result) {
             result.add(
-                classes().should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage).evaluate(classes)
+                classes()
+                        .should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage)
+                        .evaluate(classes)
             );
         }
 
         private void checkDependencyDirectionDown(JavaClasses classes, EvaluationResult result) {
             result.add(
-                classes().should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage).evaluate(classes)
+                classes()
+                        .should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage)
+                        .evaluate(classes)
             );
         }
 
@@ -244,7 +263,8 @@ public final class CustomArchitectures {
                     irrelevantDependenciesPredicate,
                     dependencyDirection,
                     groups,
-                    systemRoot
+                    systemRoot,
+                    fPackagesOn
             );
         }
 
@@ -258,7 +278,8 @@ public final class CustomArchitectures {
                     irrelevantDependenciesPredicate.add(dependency(origin, target)),
                     dependencyDirection,
                     groups,
-                    systemRoot
+                    systemRoot,
+                    fPackagesOn
             );
         }
 
@@ -270,7 +291,34 @@ public final class CustomArchitectures {
                     irrelevantDependenciesPredicate,
                     dependencyDirection,
                     groups,
-                    systemRoot
+                    systemRoot,
+                    fPackagesOn
+            );
+        }
+
+        @PublicAPI(usage = ACCESS)
+        public FunctionalArchitecture whereFPackagesOn() {
+            return new FunctionalArchitecture(
+                    fPackageDefinitions,
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate,
+                    dependencyDirection,
+                    groups,
+                    systemRoot,
+                    true
+            );
+        }
+
+        @PublicAPI(usage = ACCESS)
+        public FunctionalArchitecture whereFPackagesOff() {
+            return new FunctionalArchitecture(
+                    fPackageDefinitions,
+                    dependencySpecifications,
+                    irrelevantDependenciesPredicate,
+                    dependencyDirection,
+                    groups,
+                    systemRoot,
+                    false
             );
         }
 
@@ -283,7 +331,8 @@ public final class CustomArchitectures {
                     irrelevantDependenciesPredicate,
                     DependencyDirection.DOWN,
                     groups,
-                    systemRoot
+                    systemRoot,
+                    fPackagesOn
             );
         }
 
@@ -296,11 +345,12 @@ public final class CustomArchitectures {
                     irrelevantDependenciesPredicate,
                     DependencyDirection.UP,
                     groups,
-                    systemRoot
+                    systemRoot,
+                    fPackagesOn
             );
         }
 
-        public FunctionalArchitecture whereGroup(String thePackage) {
+        public FunctionalArchitecture group(String thePackage) {
             groups.add(thePackage);
             return this;
         }

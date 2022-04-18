@@ -25,7 +25,7 @@ public class CustomConditions {
     };
 
     public static ArchCondition<JavaClass> beInAnyOfPackages(List<String> packages) {
-        return new ArchCondition<JavaClass>("match any predicate of given predicates") {
+        return new ArchCondition<JavaClass>("be in any given package") {
             @Override
             public void check(JavaClass javaClass, ConditionEvents events) {
                 boolean okay = false;
@@ -35,7 +35,8 @@ public class CustomConditions {
                     }
                 }
                 if (!okay) {
-                    events.add(SimpleConditionEvent.violated(javaClass, format("Class %s does not belong to any given packages", javaClass.getSimpleName())));
+                    // message is simplified for example purposes
+                    events.add(SimpleConditionEvent.violated(javaClass, "is not in any FPackage"));
                 }
             }
         };

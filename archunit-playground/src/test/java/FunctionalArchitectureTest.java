@@ -28,7 +28,7 @@ public class FunctionalArchitectureTest {
                 .fPackage("users").definedBy("com.library.domain.users..")
                 .fPackage("email").definedBy("com.library.infrastructure.email..")
                 .fPackage("pdf").definedBy("com.library.infrastructure.pdf..")
-                .whereGroup("com.library.domain")
-                .whereGroup("com.library.infrastructure");
+                .group("com.library.domain")
+                .group("com.library.infrastructure");
     }
 }

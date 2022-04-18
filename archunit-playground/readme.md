@@ -35,6 +35,7 @@ Laukai:
     sistemoje. Numatytoji reikšmė: <i>BOTH</i></li>
     <li><i>groups</i>: leidžia apibrėžti paketus, kurių pagalba grupuojami <i>FPackage</i> (pavyzdžiui <i>domain</i> ir <i>infrastructure</i>)</li>
     <li><i>systemRoot</i>: leidžia apibrėžti analizuojamos sistemos ribas</li>
+    <li><i>fPackagesOn</i>: indicates whether architecture evaluation should check for all classes to belong to a group or an FPackage</li>
 </ul>
 
 <i>FunctionalArchitecture</i> apibrėžimo ir testavimo pavyzdys:
@@ -71,7 +72,7 @@ Validuojamos taisyklės:
     <li>Ar visi apibrėžti <i>FPackage</i> nepažeidžia nustatytų priklausomybių?</li>
     <li>Ar nėra apibrėžtų tuščių (be jokių klasių) <i>FPackage</i>?</li>
     <li>Ar nėra aukščiausio lygio paketų, kurių pavadinimas (<i>service</i>, <i>controller</i>, <i>persistence</i>) indikuotų, kad jie yra sluoksniniai?</li>
-    <li>Ar visos klasės priklauso <i>FPackage</i> arba yra aukščiausiame grupės sluoksnyje?</li>
+    <li>Ar visos klasės priklauso <i>FPackage</i> arba yra aukščiausiame grupės sluoksnyje? (Tikrinama tik tada, kai fPackagesOn yra true)</li>
     <li>Ar priklausomybių kryptis atitinka nustatytą?</li>
 </ul>
 
