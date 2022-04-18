@@ -2,6 +2,30 @@
 <i>archunit-playground</i> repozitorijos dalyje pateikiamas <i>ArchUnit</i> bibliotekos plėtinys - funkcinės paketų strategijos
 taisyklių apibrėžimas ir tikrinimas.
 
+## Kaip naudotis
+Pridėkite pateikiamą .jar failą (arba susigeneruokite patys). Sistemoje, kurioje norite naudoti funkcionalumą, sukurkite
+'libs' direktoriją ir joje patalpinkite .jar failą.
+
+Maven:
+````
+<dependency>
+      <groupId>agosu.bachelor</groupId>
+      <artifactId>archunit</artifactId>
+      <version>1.0</version>
+      <scope>system</scope>
+      <systemPath>${basedir}/libs/agosu3.jar</systemPath>
+</dependency>
+
+````
+
+Gradle:
+````
+implementation fileTree(dir: “libs“, include: “*.jar“)
+
+````
+
+Kadangi (bent jau kol kas) .jar neturi savyje visų reikalingų bibliotekų, jas gali reikėti pridėti patiems.
+
 ## <i>FunctionalArchitecture</i> klasė
 Viena pagrindinių šios architektūros sąvokų - <i>FPackage</i> esybė. Ši sąvoka apibrėžia funkcinį paketą.
 Architektūros įgyvendinimas leidžia apibrėžti kelis ar daugiau sistemos <i>FPackage</i> bei galimus jų tarpusavio
