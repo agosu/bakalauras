@@ -6,6 +6,7 @@ import org.junit.Test;
 import static agosu.bachelor.archunit.CustomArchitectures.functionalArchitecture;
 
 import static agosu.bachelor.archunit.CustomPredicates.*;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 public class FunctionalArchitectureTest {
 
@@ -15,8 +16,15 @@ public class FunctionalArchitectureTest {
     @Test
     public void some_architecture_rule_1() {
         getArchitecture()
-                .whereDependencyDirectionUp()
+                .whereDependencyDirectionDown()
                 .whereFPackage("users").mayOnlyAccessFPackages("books")
+                .check(classes);
+    }
+
+    @Test
+    public void some_architecture_rule_2() {
+        slices().matching("(com.library.*).(*)..")
+                .should().beFreeOfCycles()
                 .check(classes);
     }
 

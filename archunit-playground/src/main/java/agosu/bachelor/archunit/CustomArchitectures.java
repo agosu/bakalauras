@@ -23,6 +23,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.all;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.google.common.base.Preconditions.*;
 import static com.google.common.collect.Lists.newArrayList;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 import static java.lang.System.lineSeparator;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -144,6 +145,7 @@ public final class CustomArchitectures {
                 default:
                     break;
             }
+            checkCyclicDependenciesBetweenPackages(classes, result);
             for (FPackageDependencySpecification specification : dependencySpecifications) {
                 result.add(evaluateDependenciesShouldBeSatisfied(classes, specification));
             }
@@ -155,6 +157,14 @@ public final class CustomArchitectures {
                     all(packages)
                             .that(areDirectRootChildrenOf(this.systemRoot))
                             .should(notBeLayers)
+                            .evaluate(javaClasses)
+            );
+        }
+
+        private void checkCyclicDependenciesBetweenPackages(JavaClasses javaClasses, EvaluationResult result) {
+            result.add(
+                    slices().matching("(" + this.systemRoot + ".*).(*)..")
+                            .should().beFreeOfCycles()
                             .evaluate(javaClasses)
             );
         }

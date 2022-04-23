@@ -13,7 +13,7 @@ public class UsersController {
     }
 
     public void usersController() {
-        //BooksController booksController = new BooksController();
+        BooksController booksController = new BooksController();
         //ReservationsService reservationsService = new ReservationsService();
         //EventsController eventsController = new EventsController();
         //TestUserino testUserino = new TestUserino();

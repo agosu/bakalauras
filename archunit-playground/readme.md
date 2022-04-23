@@ -100,6 +100,7 @@ Validuojamos taisyklės:
     <li>Ar nėra aukščiausio lygio paketų, kurių pavadinimas (<i>service</i>, <i>controller</i>, <i>persistence</i>) indikuotų, kad jie yra sluoksniniai?</li>
     <li>Ar visos klasės priklauso <i>FPackage</i> arba yra aukščiausiame grupės sluoksnyje? (Tikrinama tik tada, kai fPackagesOn yra true)</li>
     <li>Ar priklausomybių kryptis atitinka nustatytą?</li>
+    <li>Ar tarp paketų nėra ciklinių priklausomybių?</li>
 </ul>
 
 Bibliotekos praplėtimui testuoti buvo sukurta paprasta paketų struktūra <i>com.library</i>.
