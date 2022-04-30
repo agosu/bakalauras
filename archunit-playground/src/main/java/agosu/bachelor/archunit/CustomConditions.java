@@ -78,6 +78,7 @@ public class CustomConditions {
                                     !(targetPackage.matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
                                     !belongsToGroup(groups, targetPackage, systemRoot) &&
                                     !belongsToFPackage(fPackages, targetPackage) &&
+                                    targetPackage.matches(getSubpackageRegex(getParentPackage(clazz.getPackageName()))) &&
                                     targetPackage.contains(systemRoot);
                         })
                         .collect(toList());
@@ -87,7 +88,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies those direction is down",
+                                            "Class %s has dependencies those direction is not up",
                                             clazz.getName()
                                     )
                             )
@@ -109,6 +110,7 @@ public class CustomConditions {
                                     !(targetPackage.matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
                                     !belongsToGroup(groups, targetPackage, systemRoot) &&
                                     !belongsToFPackage(fPackages, targetPackage) &&
+                                    targetPackage.matches(getSubpackageRegex(getParentPackage(clazz.getPackageName()))) &&
                                     targetPackage.contains(systemRoot);
                         })
                         .collect(toList());
@@ -118,7 +120,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies those direction is up",
+                                            "Class %s has dependencies those direction is not down",
                                             clazz.getName()
                                     )
                             )

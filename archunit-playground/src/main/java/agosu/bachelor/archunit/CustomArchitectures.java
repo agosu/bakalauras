@@ -135,6 +135,9 @@ public final class CustomArchitectures {
             checkNoUpperLayerPackageIsLayer(classes, result);
             if (fPackagesOn) {
                 checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(classes, result);
+                for (FPackageDependencySpecification specification : dependencySpecifications) {
+                    result.add(evaluateDependenciesShouldBeSatisfied(classes, specification));
+                }
             }
             switch (this.dependencyDirection) {
                 case UP:
@@ -147,9 +150,6 @@ public final class CustomArchitectures {
                     break;
             }
             checkCyclicDependenciesBetweenPackages(classes, result);
-            for (FPackageDependencySpecification specification : dependencySpecifications) {
-                result.add(evaluateDependenciesShouldBeSatisfied(classes, specification));
-            }
             return result;
         }
 

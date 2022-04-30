@@ -21,8 +21,8 @@ public class UsersController {
         //TestUserino testUserino = new TestUserino();
         //DirectParent directParent = new DirectParent();
         //PermissionsService permissionsService = new PermissionsService();
-        //InfrastructureParent infrastructureParent = new InfrastructureParent();
-        TheLino theLino = new TheLino();
+        InfrastructureParent infrastructureParent = new InfrastructureParent();
+        //TheLino theLino = new TheLino();
     }
 
 }
