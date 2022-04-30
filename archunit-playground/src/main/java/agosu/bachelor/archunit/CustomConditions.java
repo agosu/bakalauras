@@ -84,7 +84,7 @@ public class CustomConditions {
                                     clazz,
                                     format(
                                             "Class %s has dependencies those direction is down",
-                                            clazz.getSimpleName()
+                                            clazz.getSimpleName().isEmpty() ? clazz.getName() : clazz.getSimpleName()
                                     )
                             )
                     );
