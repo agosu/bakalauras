@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import static agosu.bachelor.archunit.CustomArchitectures.functionalArchitecture;
 import static agosu.bachelor.archunit.CustomPredicates.*;
-import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 public class FunctionalArchitectureTest {
 

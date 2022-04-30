@@ -18,7 +18,7 @@ public abstract class AbstractFPackageDependencySpecification {
 
     AbstractFPackageDependencySpecification(String fPackageName) {
         this.fPackageName = fPackageName;
-        this.descriptionSuffix = "";
+        this.descriptionSuffix = "may not access any FPackages";
     }
 
     public abstract CustomArchitectures.FunctionalArchitecture denyFPackageAccess(FPackageDependencyConstraint constraint, String description);
