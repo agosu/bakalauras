@@ -14,4 +14,8 @@ public class Utils {
         return getSubpackageRegex(getParentPackage(thePackage));
     }
 
+    public static String getPackageExcludingSubpackages(String thePackage) {
+        return thePackage.substring(0, thePackage.length() - 2);
+    }
+
 }

@@ -18,7 +18,7 @@ public class FunctionalArchitectureTest {
     public void some_architecture_rule_1() {
         getArchitecture()
                 .whereDependencyDirectionUp()
-                .whereFPackage("users").mayOnlyAccessFPackages("books")
+                .whereFPackage("users").mayOnlyAccessFPackages("books", "email")
                 .check(classes);
     }
 

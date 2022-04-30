@@ -30,7 +30,7 @@ public class CustomConditions {
             public void check(JavaClass javaClass, ConditionEvents events) {
                 boolean okay = false;
                 for (String thePackage : packages) {
-                    if (javaClass.getPackageName().contains(thePackage.substring(0, thePackage.length() - 2))) {
+                    if (javaClass.getPackageName().contains(getPackageExcludingSubpackages(thePackage))) {
                         okay = true;
                     }
                 }
@@ -46,9 +46,10 @@ public class CustomConditions {
         return new ArchCondition<JavaClass>("be in the same or parent package or subpackage") {
             @Override
             public void check(JavaClass javaClass, ConditionEvents events) {
-                boolean isThereItShouldBe = javaClass.getPackageName().equals(thePackage)
-                        || javaClass.getPackageName().equals(getParentPackage(thePackage))
-                        || javaClass.getPackageName().matches(getSubpackageRegex(thePackage));
+                String packageName = javaClass.getPackageName();
+                boolean isThereItShouldBe = packageName.equals(thePackage) ||
+                        packageName.equals(getParentPackage(thePackage)) ||
+                        packageName.matches(getSubpackageRegex(thePackage));
                 if (!isThereItShouldBe) {
                     events.add(
                             SimpleConditionEvent.violated(
@@ -65,17 +66,20 @@ public class CustomConditions {
         };
     }
 
-    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups) {
+    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups, List<String> fPackages) {
         return new ArchCondition<JavaClass>("have dependencies those direction is up") {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
-                        .filter(it ->
-                                !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
-                                        !(it.getTargetClass().getPackageName().equals(getParentPackage(clazz.getPackageName()))) &&
-                                        !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
-                                        !belongsToGroup(groups, it.getTargetClass().getPackageName(), systemRoot) &&
-                                        it.getTargetClass().getPackageName().contains(systemRoot))
+                        .filter(it -> {
+                            String targetPackage = it.getTargetClass().getPackageName();
+                            return !(targetPackage.equals(clazz.getPackageName())) &&
+                                    !(targetPackage.equals(getParentPackage(clazz.getPackageName()))) &&
+                                    !(targetPackage.matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
+                                    !belongsToGroup(groups, targetPackage, systemRoot) &&
+                                    !belongsToFPackage(fPackages, targetPackage) &&
+                                    targetPackage.contains(systemRoot);
+                        })
                         .collect(toList());
 
                 if (!dependenciesThatAreNotAllowed.isEmpty()) {
@@ -84,7 +88,7 @@ public class CustomConditions {
                                     clazz,
                                     format(
                                             "Class %s has dependencies those direction is down",
-                                            clazz.getSimpleName().isEmpty() ? clazz.getName() : clazz.getSimpleName()
+                                            clazz.getName()
                                     )
                             )
                     );
@@ -93,17 +97,20 @@ public class CustomConditions {
         };
     }
 
-    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups){
+    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups, List<String> fPackages){
         return new ArchCondition<JavaClass>("have dependencies those direction is down") {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
-                        .filter(it ->
-                                !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
-                                        !(it.getTargetClass().getPackageName().matches(getSubpackageRegex(clazz.getPackageName()))) &&
-                                        !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
-                                        !belongsToGroup(groups, it.getTargetClass().getPackageName(), systemRoot) &&
-                                        it.getTargetClass().getPackageName().contains(systemRoot))
+                        .filter(it -> {
+                            String targetPackage = it.getTargetClass().getPackageName();
+                            return !(targetPackage.equals(clazz.getPackageName())) &&
+                                    !(targetPackage.matches(getSubpackageRegex(clazz.getPackageName()))) &&
+                                    !(targetPackage.matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
+                                    !belongsToGroup(groups, targetPackage, systemRoot) &&
+                                    !belongsToFPackage(fPackages, targetPackage) &&
+                                    targetPackage.contains(systemRoot);
+                        })
                         .collect(toList());
 
                 if (!dependenciesThatAreNotAllowed.isEmpty()) {
@@ -112,7 +119,7 @@ public class CustomConditions {
                                     clazz,
                                     format(
                                             "Class %s has dependencies those direction is up",
-                                            clazz.getSimpleName()
+                                            clazz.getName()
                                     )
                             )
                     );
@@ -126,9 +133,11 @@ public class CustomConditions {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatResideNotInTheSamePackage = clazz.getDirectDependenciesFromSelf().stream()
-                        .filter(it ->
-                                !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
-                                        it.getTargetClass().getPackageName().contains(systemRoot))
+                        .filter(it -> {
+                            String targetPackage = it.getTargetClass().getPackageName();
+                            return !(targetPackage.equals(clazz.getPackageName())) &&
+                                    targetPackage.contains(systemRoot);
+                        })
                         .collect(toList());
 
                 if (!dependenciesThatResideNotInTheSamePackage.isEmpty()) {
@@ -137,7 +146,7 @@ public class CustomConditions {
                                     clazz,
                                     format(
                                             "Class %s has dependencies outside of it's package",
-                                            clazz.getSimpleName()
+                                            clazz.getName()
                                     )
                             )
                     );
@@ -151,8 +160,11 @@ public class CustomConditions {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatResideNotInDirectParentPackage = clazz.getDirectDependenciesFromSelf().stream()
-                        .filter(it -> !(it.getTargetClass().getPackageName().equals(getParentPackage(clazz.getPackageName())))
-                                && it.getTargetClass().getPackageName().contains(systemRoot))
+                        .filter(it -> {
+                            String targetPackage = it.getTargetClass().getPackageName();
+                            return !(targetPackage.equals(getParentPackage(clazz.getPackageName()))) &&
+                                    targetPackage.contains(systemRoot);
+                        })
                         .collect(toList());
 
                 if (!dependenciesThatResideNotInDirectParentPackage.isEmpty()) {
@@ -161,7 +173,7 @@ public class CustomConditions {
                                     clazz,
                                     format(
                                             "Class %s has dependencies not in it's direct parent package",
-                                            clazz.getSimpleName()
+                                            clazz.getName()
                                     )
                             )
                     );
@@ -175,8 +187,11 @@ public class CustomConditions {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatResideNotInDirectSubpackage = clazz.getDirectDependenciesFromSelf().stream()
-                        .filter(it -> !(it.getTargetClass().getPackageName().matches(getSubpackageRegex(clazz.getPackageName())))
-                                && it.getTargetClass().getPackageName().contains(systemRoot))
+                        .filter(it -> {
+                            String targetPackage = it.getTargetClass().getPackageName();
+                            return !(targetPackage.matches(getSubpackageRegex(clazz.getPackageName()))) &&
+                                    targetPackage.contains(systemRoot);
+                        })
                         .collect(toList());
 
                 if (!dependenciesThatResideNotInDirectSubpackage.isEmpty()) {
@@ -185,7 +200,7 @@ public class CustomConditions {
                                     clazz,
                                     format(
                                             "Class %s has dependencies not in it's direct subpackage",
-                                            clazz.getSimpleName()
+                                            clazz.getName()
                                     )
                             )
                     );
@@ -199,8 +214,11 @@ public class CustomConditions {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatResideNotInUpperLayerOfASiblingPackage = clazz.getDirectDependenciesFromSelf().stream()
-                        .filter(it -> !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName())))
-                                && it.getTargetClass().getPackageName().contains(systemRoot))
+                        .filter(it -> {
+                            String targetPackage = it.getTargetClass().getPackageName();
+                            return !(targetPackage.matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
+                                    targetPackage.contains(systemRoot);
+                        })
                         .collect(toList());
 
                 if (!dependenciesThatResideNotInUpperLayerOfASiblingPackage.isEmpty()) {
@@ -209,7 +227,7 @@ public class CustomConditions {
                                     clazz,
                                     format(
                                             "Class %s has dependencies not in upper layer of a sibling package",
-                                            clazz.getSimpleName()
+                                            clazz.getName()
                                     )
                             )
                     );
@@ -220,6 +238,16 @@ public class CustomConditions {
 
     private static boolean belongsToGroup(boolean groups, String thePackage, String systemRoot) {
         return groups && thePackage.matches(getSubpackageRegex(systemRoot));
+    }
+
+    private static boolean belongsToFPackage(List<String> fPackages, String targetPackage) {
+        for (String fPackage : fPackages) {
+            if (targetPackage.equals(fPackage)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 }

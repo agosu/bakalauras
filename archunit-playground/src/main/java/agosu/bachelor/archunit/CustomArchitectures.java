@@ -13,6 +13,7 @@ import java.util.*;
 
 import static agosu.bachelor.archunit.CustomPredicates.*;
 import static agosu.bachelor.archunit.CustomTransformers.packages;
+import static agosu.bachelor.archunit.Utils.getPackageExcludingSubpackages;
 import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
 import static com.tngtech.archunit.base.DescribedPredicate.alwaysFalse;
 import static com.tngtech.archunit.core.domain.Dependency.Predicates.*;
@@ -189,10 +190,21 @@ public final class CustomArchitectures {
             }
         }
 
+        private List<String> getAllFPackagesExcludeSubpackagePredicateFor() {
+            List<String> theList = new ArrayList<>();
+            for (FPackageDefinition fPackageDefinition : this.fPackageDefinitions) {
+                theList.add(getPackageExcludingSubpackages(fPackageDefinition.thePackage));
+            }
+
+            return theList;
+        }
+
         private void checkDependencyDirectionUp(JavaClasses classes, EvaluationResult result) {
             result.add(
                 classes()
-                        .should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(this.systemRoot, !this.groups.isEmpty()))
+                        .should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(
+                                this.systemRoot, !this.groups.isEmpty(), getAllFPackagesExcludeSubpackagePredicateFor())
+                        )
                         .evaluate(classes)
             );
         }
@@ -200,7 +212,9 @@ public final class CustomArchitectures {
         private void checkDependencyDirectionDown(JavaClasses classes, EvaluationResult result) {
             result.add(
                 classes()
-                        .should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(this.systemRoot, !this.groups.isEmpty()))
+                        .should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(
+                                this.systemRoot, !this.groups.isEmpty(), getAllFPackagesExcludeSubpackagePredicateFor())
+                        )
                         .evaluate(classes)
             );
         }

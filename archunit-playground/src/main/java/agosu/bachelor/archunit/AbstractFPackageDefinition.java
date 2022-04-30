@@ -6,6 +6,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 
 import java.util.Arrays;
 
+import static agosu.bachelor.archunit.Utils.getPackageExcludingSubpackages;
 import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static com.google.common.base.Preconditions.checkState;
@@ -31,7 +32,7 @@ public abstract class AbstractFPackageDefinition {
     @PublicAPI(usage = ACCESS)
     public CustomArchitectures.FunctionalArchitecture definedBy(String... packageIdentifiers) {
         String oneAndOnly = Arrays.stream(packageIdentifiers).findFirst().get();
-        String excludeSubPackageIdentifier = oneAndOnly.substring(0, oneAndOnly.length() - 2);
+        String excludeSubPackageIdentifier = getPackageExcludingSubpackages(oneAndOnly);
         return definedBy(
                 oneAndOnly,
                 resideInAnyPackage(packageIdentifiers),
