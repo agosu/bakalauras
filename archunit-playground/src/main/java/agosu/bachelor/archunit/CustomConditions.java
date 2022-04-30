@@ -7,6 +7,7 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static agosu.bachelor.archunit.Utils.*;
@@ -66,21 +67,12 @@ public class CustomConditions {
         };
     }
 
-    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups, List<String> fPackages) {
-        return new ArchCondition<JavaClass>("have dependencies those direction is up") {
+    public static ArchCondition<JavaClass> notAccessClassesInSubpackages() {
+        return new ArchCondition<JavaClass>("not access classes in subpackages") {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
-                        .filter(it -> {
-                            String targetPackage = it.getTargetClass().getPackageName();
-                            return !(targetPackage.equals(clazz.getPackageName())) &&
-                                    !(targetPackage.equals(getParentPackage(clazz.getPackageName()))) &&
-                                    !(targetPackage.matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
-                                    !belongsToGroup(groups, targetPackage, systemRoot) &&
-                                    !belongsToFPackage(fPackages, targetPackage) &&
-                                    targetPackage.matches(getSubpackageRegex(getParentPackage(clazz.getPackageName()))) &&
-                                    targetPackage.contains(systemRoot);
-                        })
+                        .filter(it -> it.getTargetClass().getPackageName().matches(getSubpackageRegex(clazz.getPackageName())))
                         .collect(toList());
 
                 if (!dependenciesThatAreNotAllowed.isEmpty()) {
@@ -88,7 +80,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies those direction is not up",
+                                            "Class %s has dependencies in subpackages",
                                             clazz.getName()
                                     )
                             )
@@ -98,20 +90,24 @@ public class CustomConditions {
         };
     }
 
-    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups, List<String> fPackages){
-        return new ArchCondition<JavaClass>("have dependencies those direction is down") {
+    public static ArchCondition<JavaClass> notAccessClassesInAncestorPackages(){
+        return new ArchCondition<JavaClass>("not access classes in ancestor packages") {
             @Override
             public void check(JavaClass clazz, ConditionEvents events) {
                 List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
                         .filter(it -> {
+                            int numberOfPackageLayers = clazz.getPackageName().split("[.]").length;
+                            List<String> ancestors = new ArrayList<>();
+                            ancestors.add(getParentPackage(clazz.getPackageName()));
+                            for (int i = 0; i < numberOfPackageLayers - 2; i++) {
+                                ancestors.add(getParentPackage(ancestors.get(i)));
+                            }
                             String targetPackage = it.getTargetClass().getPackageName();
-                            return !(targetPackage.equals(clazz.getPackageName())) &&
-                                    !(targetPackage.matches(getSubpackageRegex(clazz.getPackageName()))) &&
-                                    !(targetPackage.matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
-                                    !belongsToGroup(groups, targetPackage, systemRoot) &&
-                                    !belongsToFPackage(fPackages, targetPackage) &&
-                                    targetPackage.matches(getSubpackageRegex(getParentPackage(clazz.getPackageName()))) &&
-                                    targetPackage.contains(systemRoot);
+                            boolean result = false;
+                            for (String ancestor : ancestors) {
+                                result = result || targetPackage.equals(ancestor);
+                            }
+                            return result;
                         })
                         .collect(toList());
 
@@ -120,7 +116,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies those direction is not down",
+                                            "Class %s has dependencies in ancestor packages",
                                             clazz.getName()
                                     )
                             )

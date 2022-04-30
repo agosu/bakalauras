@@ -25,7 +25,7 @@ public class FunctionalArchitectureTest {
     @Test
     public void some_architecture_rule_2() {
         getArchitecture()
-                .whereDependencyDirectionUp()
+                .whereDependencyDirectionDown()
                 .whereFPackagesOff()
                 .check(classes);
     }
@@ -33,13 +33,13 @@ public class FunctionalArchitectureTest {
     private CustomArchitectures.FunctionalArchitecture getArchitecture() {
         return functionalArchitecture()
                 .systemRoot(SYSTEM_PATH)
-                .ignoreDependency(isInsideThisSystem(SYSTEM_PATH), isOutsideThisSystem(SYSTEM_PATH));
-                //.fPackage("books").definedBy("com.library.domain.books..")
-                //.fPackage("events").definedBy("com.library.domain.events..")
-                //.fPackage("users").definedBy("com.library.domain.users..")
-                //.fPackage("email").definedBy("com.library.infrastructure.email..")
-                //.fPackage("pdf").definedBy("com.library.infrastructure.pdf..")
-                //.group("com.library.domain")
-                //.group("com.library.infrastructure");
+                .ignoreDependency(isInsideThisSystem(SYSTEM_PATH), isOutsideThisSystem(SYSTEM_PATH))
+                .fPackage("books").definedBy("com.library.domain.books..")
+                .fPackage("events").definedBy("com.library.domain.events..")
+                .fPackage("users").definedBy("com.library.domain.users..")
+                .fPackage("email").definedBy("com.library.infrastructure.email..")
+                .fPackage("pdf").definedBy("com.library.infrastructure.pdf..")
+                .group("com.library.domain")
+                .group("com.library.infrastructure");
     }
 }

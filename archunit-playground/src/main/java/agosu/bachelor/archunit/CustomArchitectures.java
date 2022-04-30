@@ -201,21 +201,13 @@ public final class CustomArchitectures {
 
         private void checkDependencyDirectionUp(JavaClasses classes, EvaluationResult result) {
             result.add(
-                classes()
-                        .should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(
-                                this.systemRoot, !this.groups.isEmpty(), getAllFPackagesExcludeSubpackagePredicateFor())
-                        )
-                        .evaluate(classes)
+                    classes().should(notAccessClassesInSubpackages()).evaluate(classes)
             );
         }
 
         private void checkDependencyDirectionDown(JavaClasses classes, EvaluationResult result) {
             result.add(
-                classes()
-                        .should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(
-                                this.systemRoot, !this.groups.isEmpty(), getAllFPackagesExcludeSubpackagePredicateFor())
-                        )
-                        .evaluate(classes)
+                    classes().should(notAccessClassesInAncestorPackages()).evaluate(classes)
             );
         }
 
