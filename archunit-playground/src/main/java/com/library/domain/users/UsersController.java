@@ -5,6 +5,7 @@ import com.library.domain.books.BooksController;
 import com.library.domain.books.reservations.ReservationsService;
 import com.library.domain.events.EventsController;
 import com.library.domain.users.permissions.PermissionsService;
+import com.library.infrastructure.InfrastructureParent;
 
 public class UsersController {
 
@@ -12,13 +13,14 @@ public class UsersController {
 
     }
 
-    public void usersController() {
+    public void usersController(BooksController bk) {
         BooksController booksController = new BooksController();
         //ReservationsService reservationsService = new ReservationsService();
         //EventsController eventsController = new EventsController();
         //TestUserino testUserino = new TestUserino();
         //DirectParent directParent = new DirectParent();
         //PermissionsService permissionsService = new PermissionsService();
+        //InfrastructureParent infrastructureParent = new InfrastructureParent();
     }
 
 }

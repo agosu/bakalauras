@@ -65,140 +65,161 @@ public class CustomConditions {
         };
     }
 
-    public static final ArchCondition<JavaClass> accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage = new ArchCondition<JavaClass>("have dependencies those direction is up") {
-        @Override
-        public void check(JavaClass clazz, ConditionEvents events) {
-            List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
-                    .filter(it ->
-                            !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
-                                    !(it.getTargetClass().getPackageName().equals(getParentPackage(clazz.getPackageName()))) &&
-                                    !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
-                                    it.getTargetClass().getPackageName().contains("com.library"))
-                    .collect(toList());
+    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups) {
+        return new ArchCondition<JavaClass>("have dependencies those direction is up") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
+                        .filter(it ->
+                                !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
+                                        !(it.getTargetClass().getPackageName().equals(getParentPackage(clazz.getPackageName()))) &&
+                                        !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
+                                        !belongsToGroup(groups, it.getTargetClass().getPackageName(), systemRoot) &&
+                                        it.getTargetClass().getPackageName().contains(systemRoot))
+                        .collect(toList());
 
-            if (!dependenciesThatAreNotAllowed.isEmpty()) {
-                events.add(
-                        SimpleConditionEvent.violated(
-                                clazz,
-                                format(
-                                        "Class %s has dependencies those direction is down",
-                                        clazz.getSimpleName()
-                                )
-                        )
-                );
+                if (!dependenciesThatAreNotAllowed.isEmpty()) {
+                    events.add(
+                            SimpleConditionEvent.violated(
+                                    clazz,
+                                    format(
+                                            "Class %s has dependencies those direction is down",
+                                            clazz.getSimpleName()
+                                    )
+                            )
+                    );
+                }
             }
-        }
-    };
+        };
+    }
 
-    public static final ArchCondition<JavaClass> accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage = new ArchCondition<JavaClass>("have dependencies those direction is down") {
-        @Override
-        public void check(JavaClass clazz, ConditionEvents events) {
-            List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
-                    .filter(it ->
-                            !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
-                                    !(it.getTargetClass().getPackageName().matches(getSubpackageRegex(clazz.getPackageName()))) &&
-                                    !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
-                                    it.getTargetClass().getPackageName().contains("com.library"))
-                    .collect(toList());
+    public static ArchCondition<JavaClass> accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(String systemRoot, boolean groups){
+        return new ArchCondition<JavaClass>("have dependencies those direction is down") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                List<Dependency> dependenciesThatAreNotAllowed = clazz.getDirectDependenciesFromSelf().stream()
+                        .filter(it ->
+                                !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
+                                        !(it.getTargetClass().getPackageName().matches(getSubpackageRegex(clazz.getPackageName()))) &&
+                                        !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) &&
+                                        !belongsToGroup(groups, it.getTargetClass().getPackageName(), systemRoot) &&
+                                        it.getTargetClass().getPackageName().contains(systemRoot))
+                        .collect(toList());
 
-            if (!dependenciesThatAreNotAllowed.isEmpty()) {
-                events.add(
-                        SimpleConditionEvent.violated(
-                                clazz,
-                                format(
-                                        "Class %s has dependencies those direction is up",
-                                        clazz.getSimpleName()
-                                )
-                        )
-                );
+                if (!dependenciesThatAreNotAllowed.isEmpty()) {
+                    events.add(
+                            SimpleConditionEvent.violated(
+                                    clazz,
+                                    format(
+                                            "Class %s has dependencies those direction is up",
+                                            clazz.getSimpleName()
+                                    )
+                            )
+                    );
+                }
             }
-        }
-    };
+        };
+    }
 
-    public static final ArchCondition<JavaClass> accessClassesInTheSamePackage = new ArchCondition<JavaClass>("access classes in the same package") {
-        @Override
-        public void check(JavaClass clazz, ConditionEvents events) {
-            List<Dependency> dependenciesThatResideNotInTheSamePackage = clazz.getDirectDependenciesFromSelf().stream()
-                    .filter(it ->
-                            !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
-                                    it.getTargetClass().getPackageName().contains("com.library"))
-                    .collect(toList());
+    public static ArchCondition<JavaClass> accessClassesInTheSamePackage(String systemRoot){
+        return new ArchCondition<JavaClass>("access classes in the same package") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                List<Dependency> dependenciesThatResideNotInTheSamePackage = clazz.getDirectDependenciesFromSelf().stream()
+                        .filter(it ->
+                                !(clazz.getPackageName().equals(it.getTargetClass().getPackageName())) &&
+                                        it.getTargetClass().getPackageName().contains(systemRoot))
+                        .collect(toList());
 
-            if (!dependenciesThatResideNotInTheSamePackage.isEmpty()) {
-                events.add(
-                        SimpleConditionEvent.violated(
-                                clazz,
-                                format(
-                                        "Class %s has dependencies outside of it's package",
-                                        clazz.getSimpleName()
-                                )
-                        )
-                );
+                if (!dependenciesThatResideNotInTheSamePackage.isEmpty()) {
+                    events.add(
+                            SimpleConditionEvent.violated(
+                                    clazz,
+                                    format(
+                                            "Class %s has dependencies outside of it's package",
+                                            clazz.getSimpleName()
+                                    )
+                            )
+                    );
+                }
             }
-        }
-    };
+        };
+    }
 
-    public static final ArchCondition<JavaClass> accessClassesInDirectParentPackage = new ArchCondition<JavaClass>("access classes in direct parent package") {
-        @Override
-        public void check(JavaClass clazz, ConditionEvents events) {
-            List<Dependency> dependenciesThatResideNotInDirectParentPackage = clazz.getDirectDependenciesFromSelf().stream()
-                    .filter(it -> !(it.getTargetClass().getPackageName().equals(getParentPackage(clazz.getPackageName()))) && it.getTargetClass().getPackageName().contains("com.library"))
-                    .collect(toList());
+    public static ArchCondition<JavaClass> accessClassesInDirectParentPackage(String systemRoot){
+        return new ArchCondition<JavaClass>("access classes in direct parent package") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                List<Dependency> dependenciesThatResideNotInDirectParentPackage = clazz.getDirectDependenciesFromSelf().stream()
+                        .filter(it -> !(it.getTargetClass().getPackageName().equals(getParentPackage(clazz.getPackageName())))
+                                && it.getTargetClass().getPackageName().contains(systemRoot))
+                        .collect(toList());
 
-            if (!dependenciesThatResideNotInDirectParentPackage.isEmpty()) {
-                events.add(
-                        SimpleConditionEvent.violated(
-                                clazz,
-                                format(
-                                        "Class %s has dependencies not in it's direct parent package",
-                                        clazz.getSimpleName()
-                                )
-                        )
-                );
+                if (!dependenciesThatResideNotInDirectParentPackage.isEmpty()) {
+                    events.add(
+                            SimpleConditionEvent.violated(
+                                    clazz,
+                                    format(
+                                            "Class %s has dependencies not in it's direct parent package",
+                                            clazz.getSimpleName()
+                                    )
+                            )
+                    );
+                }
             }
-        }
-    };
+        };
+    }
 
-    public static final ArchCondition<JavaClass> accessClassesInDirectSubpackage = new ArchCondition<JavaClass>("access classes in direct subpackage") {
-        @Override
-        public void check(JavaClass clazz, ConditionEvents events) {
-            List<Dependency> dependenciesThatResideNotInDirectSubpackage = clazz.getDirectDependenciesFromSelf().stream()
-                    .filter(it -> !(it.getTargetClass().getPackageName().matches(getSubpackageRegex(clazz.getPackageName()))) && it.getTargetClass().getPackageName().contains("com.library"))
-                    .collect(toList());
+    public static ArchCondition<JavaClass> accessClassesInDirectSubpackage(String systemRoot){
+        return new ArchCondition<JavaClass>("access classes in direct subpackage") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                List<Dependency> dependenciesThatResideNotInDirectSubpackage = clazz.getDirectDependenciesFromSelf().stream()
+                        .filter(it -> !(it.getTargetClass().getPackageName().matches(getSubpackageRegex(clazz.getPackageName())))
+                                && it.getTargetClass().getPackageName().contains(systemRoot))
+                        .collect(toList());
 
-            if (!dependenciesThatResideNotInDirectSubpackage.isEmpty()) {
-                events.add(
-                        SimpleConditionEvent.violated(
-                                clazz,
-                                format(
-                                        "Class %s has dependencies not in it's direct subpackage",
-                                        clazz.getSimpleName()
-                                )
-                        )
-                );
+                if (!dependenciesThatResideNotInDirectSubpackage.isEmpty()) {
+                    events.add(
+                            SimpleConditionEvent.violated(
+                                    clazz,
+                                    format(
+                                            "Class %s has dependencies not in it's direct subpackage",
+                                            clazz.getSimpleName()
+                                    )
+                            )
+                    );
+                }
             }
-        }
-    };
+        };
+    }
 
-    public static final ArchCondition<JavaClass> accessClassesInUpperLayerOfASiblingPackage = new ArchCondition<JavaClass>("access classes in upper layer of a sibling package") {
-        @Override
-        public void check(JavaClass clazz, ConditionEvents events) {
-            List<Dependency> dependenciesThatResideNotInUpperLayerOfASiblingPackage = clazz.getDirectDependenciesFromSelf().stream()
-                    .filter(it -> !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName()))) && it.getTargetClass().getPackageName().contains("com.library"))
-                    .collect(toList());
+    public static ArchCondition<JavaClass> accessClassesInUpperLayerOfASiblingPackage(String systemRoot){
+        return new ArchCondition<JavaClass>("access classes in upper layer of a sibling package") {
+            @Override
+            public void check(JavaClass clazz, ConditionEvents events) {
+                List<Dependency> dependenciesThatResideNotInUpperLayerOfASiblingPackage = clazz.getDirectDependenciesFromSelf().stream()
+                        .filter(it -> !(it.getTargetClass().getPackageName().matches(getSiblingPackageOrSelfRegex(clazz.getPackageName())))
+                                && it.getTargetClass().getPackageName().contains(systemRoot))
+                        .collect(toList());
 
-            if (!dependenciesThatResideNotInUpperLayerOfASiblingPackage.isEmpty()) {
-                events.add(
-                        SimpleConditionEvent.violated(
-                                clazz,
-                                format(
-                                        "Class %s has dependencies not in upper layer of a sibling package",
-                                        clazz.getSimpleName()
-                                )
-                        )
-                );
+                if (!dependenciesThatResideNotInUpperLayerOfASiblingPackage.isEmpty()) {
+                    events.add(
+                            SimpleConditionEvent.violated(
+                                    clazz,
+                                    format(
+                                            "Class %s has dependencies not in upper layer of a sibling package",
+                                            clazz.getSimpleName()
+                                    )
+                            )
+                    );
+                }
             }
-        }
-    };
+        };
+    }
+
+    private static boolean belongsToGroup(boolean groups, String thePackage, String systemRoot) {
+        return groups && thePackage.matches(getSubpackageRegex(systemRoot));
+    }
 
 }

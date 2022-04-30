@@ -5,6 +5,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaPackage;
 
 import static agosu.bachelor.archunit.Utils.getParentPackage;
+import static agosu.bachelor.archunit.Utils.getSubpackageRegex;
 import static java.lang.String.format;
 
 public class CustomPredicates {
@@ -37,6 +38,16 @@ public class CustomPredicates {
         };
     }
 
+    public static DescribedPredicate<JavaClass> areInTheSamePackage(String thePackage) {
+        String theSubpackage = thePackage + "[.][^.]+";
+        return new DescribedPredicate<JavaClass>("are in the same package") {
+            @Override
+            public boolean apply(JavaClass javaClass) {
+                return javaClass.getPackageName().equals(thePackage);
+            }
+        };
+    }
+
     public static DescribedPredicate<JavaClass> areInTheSameOrParentPackageOrSubpackage(String thePackage) {
         String theParentPackage = thePackage.substring(0, thePackage.lastIndexOf('.') - 1);
         String theSubpackage = thePackage + "[.][^.]+";
@@ -55,6 +66,15 @@ public class CustomPredicates {
             @Override
             public boolean apply(JavaClass javaClass) {
                 return javaClass.getPackageName().equals(getParentPackage(thePackage));
+            }
+        };
+    }
+
+    public  static DescribedPredicate<JavaClass> areInSubpackageOf(String thePackage) {
+        return new DescribedPredicate<JavaClass>(format("are in subpackage of %s", thePackage)) {
+            @Override
+            public boolean apply(JavaClass javaClass) {
+                return javaClass.getPackageName().matches(getSubpackageRegex(thePackage));
             }
         };
     }

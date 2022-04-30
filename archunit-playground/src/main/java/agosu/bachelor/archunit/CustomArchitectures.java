@@ -11,8 +11,7 @@ import com.google.common.base.Joiner;
 
 import java.util.*;
 
-import static agosu.bachelor.archunit.CustomPredicates.areDirectRootChildrenOf;
-import static agosu.bachelor.archunit.CustomPredicates.areInParentPackageOf;
+import static agosu.bachelor.archunit.CustomPredicates.*;
 import static agosu.bachelor.archunit.CustomTransformers.packages;
 import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
 import static com.tngtech.archunit.base.DescribedPredicate.alwaysFalse;
@@ -98,6 +97,7 @@ public final class CustomArchitectures {
         }
 
         private FunctionalArchitecture addDependencySpecification(FPackageDependencySpecification dependencySpecification) {
+            dependencySpecifications.removeIf(specification -> specification.getFPackageName().equals(dependencySpecification.getFPackageName()));
             dependencySpecifications.add(dependencySpecification);
             return this;
         }
@@ -192,7 +192,7 @@ public final class CustomArchitectures {
         private void checkDependencyDirectionUp(JavaClasses classes, EvaluationResult result) {
             result.add(
                 classes()
-                        .should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage)
+                        .should(accessClassesInTheSameOrDirectParentPackageOrUpperLayerOfASiblingPackage(this.systemRoot, !this.groups.isEmpty()))
                         .evaluate(classes)
             );
         }
@@ -200,7 +200,7 @@ public final class CustomArchitectures {
         private void checkDependencyDirectionDown(JavaClasses classes, EvaluationResult result) {
             result.add(
                 classes()
-                        .should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage)
+                        .should(accessClassesInTheSameOrDirectSubpackageOrUpperLayerOfASiblingPackage(this.systemRoot, !this.groups.isEmpty()))
                         .evaluate(classes)
             );
         }
@@ -233,10 +233,25 @@ public final class CustomArchitectures {
         private DescribedPredicate<Dependency> targetMatchesIfDependencyIsRelevant(String ownFPackage, Set<String> allowedTargets) {
             String thePackage = this.fPackageDefinitions.get(ownFPackage).thePackage;
             String thePackageExcludingSubpackages = thePackage.substring(0, thePackage.length() - 2);
-            DescribedPredicate<Dependency> targetPackageMatches =
-                    dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
-                            .or(dependencyTarget(fPackageDefinitions.containsPredicateFor(ownFPackage)))
-                            .or(dependencyTarget(areInParentPackageOf(thePackageExcludingSubpackages)));
+            DescribedPredicate<Dependency> targetPackageMatches;
+            if (this.dependencyDirection == DependencyDirection.DOWN) {
+                targetPackageMatches = dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
+                        .or(dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(ownFPackage)))
+                        .or(dependencyTarget(areInSubpackageOf(thePackageExcludingSubpackages)));
+            } else if (this.dependencyDirection == DependencyDirection.UP) {
+                targetPackageMatches = dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
+                        .or(dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(ownFPackage)))
+                        .or(dependencyTarget(areInParentPackageOf(thePackageExcludingSubpackages)));
+            } else {
+                targetPackageMatches = dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
+                        .or(dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(ownFPackage)))
+                        .or(dependencyTarget(areInParentPackageOf(thePackageExcludingSubpackages)))
+                        .or(dependencyTarget(areInSubpackageOf(thePackageExcludingSubpackages)));
+            }
+
+            for (String group : this.groups) {
+                targetPackageMatches = targetPackageMatches.or(dependencyTarget(areInTheSamePackage(group)));
+            }
 
             return ifDependencyIsRelevant(targetPackageMatches);
         }
@@ -278,7 +293,6 @@ public final class CustomArchitectures {
             );
         }
 
-
         @PublicAPI(usage = ACCESS)
         public FunctionalArchitecture ignoreDependency(
                 DescribedPredicate<? super JavaClass> origin, DescribedPredicate<? super JavaClass> target) {
@@ -294,7 +308,7 @@ public final class CustomArchitectures {
         }
 
         @PublicAPI(usage = ACCESS)
-        public FunctionalArchitecture whereSystemRoot(String systemRoot) {
+        public FunctionalArchitecture systemRoot(String systemRoot) {
             return new FunctionalArchitecture(
                     fPackageDefinitions,
                     dependencySpecifications,
