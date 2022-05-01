@@ -219,38 +219,42 @@ public final class CustomArchitectures {
         }
 
         private EvaluationResult evaluateDependenciesShouldBeSatisfied(JavaClasses classes, FPackageDependencySpecification specification) {
-            ArchCondition<JavaClass> satisfyFPackageDependenciesCondition = specification.constraint == FPackageDependencyConstraint.ORIGIN
-                    ? onlyHaveDependentsWhere(originMatchesIfDependencyIsRelevant(specification.getFPackageName(), specification.allowedFPackages))
-                    : onlyHaveDependenciesWhere(targetMatchesIfDependencyIsRelevant(specification.getFPackageName(), specification.allowedFPackages));
             return classes().that(fPackageDefinitions.containsPredicateFor(specification.getFPackageName()))
-                    .should(satisfyFPackageDependenciesCondition)
+                    .should(satisfyFPackageDependenciesCondition(specification))
                     .allowEmptyShould(false)
                     .evaluate(classes);
         }
 
-        private DescribedPredicate<Dependency> originMatchesIfDependencyIsRelevant(String ownFPackage, Set<String> allowedAccessors) {
-            DescribedPredicate<Dependency> originPackageMatches =
-                    dependencyOrigin(fPackageDefinitions.excludeSubpackagePredicateFor(allowedAccessors))
-                            .or(dependencyOrigin(fPackageDefinitions.containsPredicateFor(ownFPackage)));
-
-            return ifDependencyIsRelevant(originPackageMatches);
+        private ArchCondition<JavaClass> satisfyFPackageDependenciesCondition(CustomArchitectures.FunctionalArchitecture.FPackageDependencySpecification specification) {
+            return new ArchCondition<JavaClass>("satisfy FPackage dependencies condition") {
+                @Override
+                public void check(JavaClass javaClass, ConditionEvents events) {
+                    onlyHaveDependenciesWhere(
+                            targetMatchesIfDependencyIsRelevant(javaClass.getPackageName(), specification.getFPackageName(), specification.allowedFPackages)
+                    ).check(javaClass, events);
+                }
+            };
         }
 
-        private DescribedPredicate<Dependency> targetMatchesIfDependencyIsRelevant(String ownFPackage, Set<String> allowedTargets) {
-            String thePackage = this.fPackageDefinitions.get(ownFPackage).thePackage;
-            String thePackageExcludingSubpackages = thePackage.substring(0, thePackage.length() - 2);
+        private DescribedPredicate<Dependency> targetMatchesIfDependencyIsRelevant(String thePackage, String ownFPackage, Set<String> allowedTargets) {
+            //String thePackage = this.fPackageDefinitions.get(ownFPackage).thePackage;
+            String thePackageExcludingSubpackages = getPackageExcludingSubpackages(thePackage);
             DescribedPredicate<Dependency> targetPackageMatches;
             if (this.dependencyDirection == DependencyDirection.DOWN) {
                 targetPackageMatches = dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
-                        .or(dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(ownFPackage)))
+                        // TODO: The bug here
+                        // exclude predicate usage does not allow classes in FPackage subpackage access classes in the same package
+                        // but if contains predicate is used, then dependency direction up violations will not be caught
+                        // solution: check here if target is in the same package instead
+                        .or(dependencyTarget(areInTheSamePackage(thePackage)))
                         .or(dependencyTarget(areInSubpackageOf(thePackageExcludingSubpackages)));
             } else if (this.dependencyDirection == DependencyDirection.UP) {
                 targetPackageMatches = dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
-                        .or(dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(ownFPackage)))
+                        .or(dependencyTarget(areInTheSamePackage(thePackage)))
                         .or(dependencyTarget(areInParentPackageOf(thePackageExcludingSubpackages)));
             } else {
                 targetPackageMatches = dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
-                        .or(dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(ownFPackage)))
+                        .or(dependencyTarget(areInTheSamePackage(thePackage)))
                         .or(dependencyTarget(areInParentPackageOf(thePackageExcludingSubpackages)))
                         .or(dependencyTarget(areInSubpackageOf(thePackageExcludingSubpackages)));
             }

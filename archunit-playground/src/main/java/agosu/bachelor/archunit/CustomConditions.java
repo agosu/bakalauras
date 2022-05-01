@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static agosu.bachelor.archunit.Utils.*;
+import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDependenciesWhere;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 

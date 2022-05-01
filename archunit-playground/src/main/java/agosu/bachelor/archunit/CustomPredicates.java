@@ -39,7 +39,6 @@ public class CustomPredicates {
     }
 
     public static DescribedPredicate<JavaClass> areInTheSamePackage(String thePackage) {
-        String theSubpackage = thePackage + "[.][^.]+";
         return new DescribedPredicate<JavaClass>("are in the same package") {
             @Override
             public boolean apply(JavaClass javaClass) {

@@ -25,8 +25,7 @@ public class FunctionalArchitectureTest {
     @Test
     public void some_architecture_rule_2() {
         getArchitecture()
-                .whereDependencyDirectionDown()
-                .whereFPackagesOff()
+                .whereDependencyDirectionUp()
                 .check(classes);
     }
 
