@@ -9,7 +9,7 @@ import static agosu.bachelor.archunit.CustomPredicates.*;
 
 public class FunctionalArchitectureTest {
 
-    private final String SYSTEM_PATH = "com.library";
+    private final String SYSTEM_PATH = "com.library.domain";
     private final JavaClasses classes = new ClassFileImporter()
             .withImportOption(new ImportOption.DoNotIncludeTests())
             .importPackages(SYSTEM_PATH);
@@ -35,10 +35,10 @@ public class FunctionalArchitectureTest {
                 .ignoreDependency(isInsideThisSystem(SYSTEM_PATH), isOutsideThisSystem(SYSTEM_PATH))
                 .fPackage("books").definedBy("com.library.domain.books..")
                 .fPackage("events").definedBy("com.library.domain.events..")
-                .fPackage("users").definedBy("com.library.domain.users..")
-                .fPackage("email").definedBy("com.library.infrastructure.email..")
-                .fPackage("pdf").definedBy("com.library.infrastructure.pdf..")
-                .group("com.library.domain")
-                .group("com.library.infrastructure");
+                .fPackage("users").definedBy("com.library.domain.users..");
+                //.fPackage("email").definedBy("com.library.infrastructure.email..")
+                //.fPackage("pdf").definedBy("com.library.infrastructure.pdf..")
+                //.group("com.library.domain")
+                //.group("com.library.infrastructure");
     }
 }

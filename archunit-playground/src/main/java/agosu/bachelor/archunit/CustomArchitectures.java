@@ -14,6 +14,7 @@ import java.util.*;
 import static agosu.bachelor.archunit.CustomPredicates.*;
 import static agosu.bachelor.archunit.CustomTransformers.packages;
 import static agosu.bachelor.archunit.Utils.getPackageExcludingSubpackages;
+import static agosu.bachelor.archunit.Utils.getParentPackage;
 import static com.tngtech.archunit.PublicAPI.Usage.ACCESS;
 import static com.tngtech.archunit.base.DescribedPredicate.alwaysFalse;
 import static com.tngtech.archunit.core.domain.Dependency.Predicates.*;
@@ -111,7 +112,8 @@ public final class CustomArchitectures {
         @Override
         @PublicAPI(usage = ACCESS)
         public String getDescription() {
-            List<String> lines = newArrayList("Functional architecture consisting of");
+            List<String> lines = newArrayList(
+                    "Functional architecture" + (fPackageDefinitions.isEmpty() && dependencySpecifications.isEmpty() ? "" : " consisting of"));
             for (FPackageDefinition definition : fPackageDefinitions) {
                 lines.add(definition.toString());
             }
@@ -172,6 +174,7 @@ public final class CustomArchitectures {
 
         private void checkAllClassesBelongToFPackagesOrAreDirectGroupChildren(JavaClasses classes, EvaluationResult result) {
             List<String> fPackages = new ArrayList<>();
+            fPackages.add(this.systemRoot);
             for (FPackageDefinition fPackageDefinition : this.fPackageDefinitions) {
                 fPackages.add(fPackageDefinition.thePackage);
             }
@@ -188,15 +191,6 @@ public final class CustomArchitectures {
             for (FPackageDefinition definition : fPackageDefinitions) {
                 result.add(evaluateFPackagesShouldNotBeEmpty(classes, definition));
             }
-        }
-
-        private List<String> getAllFPackagesExcludeSubpackagePredicateFor() {
-            List<String> theList = new ArrayList<>();
-            for (FPackageDefinition fPackageDefinition : this.fPackageDefinitions) {
-                theList.add(getPackageExcludingSubpackages(fPackageDefinition.thePackage));
-            }
-
-            return theList;
         }
 
         private void checkDependencyDirectionUp(JavaClasses classes, EvaluationResult result) {
@@ -228,20 +222,10 @@ public final class CustomArchitectures {
                     .evaluate(classes);
         }
 
-        /*private ArchCondition<JavaClass> satisfyFPackageDependenciesCondition(CustomArchitectures.FunctionalArchitecture.FPackageDependencySpecification specification) {
-            return new ArchCondition<JavaClass>("satisfy FPackage dependencies condition") {
-                @Override
-                public void check(JavaClass javaClass, ConditionEvents events) {
-                    onlyHaveDependenciesWhere(
-                            targetMatchesIfDependencyIsRelevant(javaClass.getPackageName(), specification.getFPackageName(), specification.allowedFPackages)
-                    ).check(javaClass, events);
-                }
-            };
-        }*/
-
         private DescribedPredicate<Dependency> targetMatchesIfDependencyIsRelevant(String ownFPackage, Set<String> allowedTargets) {
             DescribedPredicate<Dependency> targetPackageMatches = dependencyTarget(fPackageDefinitions.excludeSubpackagePredicateFor(allowedTargets))
-                    .or(dependencyTarget(fPackageDefinitions.containsPredicateFor(ownFPackage)));
+                    .or(dependencyTarget(fPackageDefinitions.containsPredicateFor(ownFPackage)))
+                    .or(dependencyTarget(areInParentPackageOf(getPackageExcludingSubpackages(fPackageDefinitions.get(ownFPackage).thePackage))));
 
             for (String group : this.groups) {
                 targetPackageMatches = targetPackageMatches.or(dependencyTarget(areInTheSamePackage(group)));
@@ -408,6 +392,10 @@ public final class CustomArchitectures {
 
             boolean containFPackage(String fPackageName) {
                 return fPackageDefinitions.containsKey(fPackageName);
+            }
+
+            boolean isEmpty() {
+                return fPackageDefinitions.isEmpty();
             }
 
             DescribedPredicate<JavaClass> containsPredicateFor(String fPackageName) {
