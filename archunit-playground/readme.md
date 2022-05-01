@@ -67,20 +67,23 @@ Laukai:
 ````
 public class FunctionalArchitectureTest {
 
-    private final JavaClasses classes = new ClassFileImporter().importPackages(SYSTEM_PATH);
+    private final String SYSTEM_PATH = "com.library";
+    private final JavaClasses classes = new ClassFileImporter()
+            .withImportOption(new ImportOption.DoNotIncludeTests())
+            .importPackages(SYSTEM_PATH);
 
     @Test
-    public void some_architecture_rule_1() {
+    public void generalArchitectureTest() {
         getArchitecture()
                 .whereDependencyDirectionUp()
-                .whereSystemRoot(SYSTEM_PATH)
                 .whereFPackagesOn()
-                .whereFPackage("users").mayOnlyAccessFPackages("books")
+                .whereFPackage("users").mayOnlyAccessFPackages("books", "email")
                 .check(classes);
     }
 
     private CustomArchitectures.FunctionalArchitecture getArchitecture() {
         return functionalArchitecture()
+                .systemRoot(SYSTEM_PATH)
                 .ignoreDependency(isInsideThisSystem(SYSTEM_PATH), isOutsideThisSystem(SYSTEM_PATH))
                 .fPackage("books").definedBy("com.library.domain.books..")
                 .fPackage("events").definedBy("com.library.domain.events..")
@@ -92,6 +95,16 @@ public class FunctionalArchitectureTest {
     }
 }
 ````
+Numatytoji konfigūracija ir išankstinės sąlygos:
+<ul>
+    <li><i>systemRoot</i> kintamasis privalomas - reikšmė negali būti palikta tuščia, norint ją nustatyti, naudojamas metodas <i>systemRoot()</i>;</li>
+    <li><i>dependencyDirection</i> numatytoji reikšmė: <i>DependencyDirection.BOTH</i>, norint ją pakeisti, naudojami metodai <i>whereDependencyDirectionUp()</i> ir <i>whereDependendencyDirectionDown()</i>;</li>
+    <li><i>fPackagesOn</i> kintamojo numatytoji reikšmė: <i>true</i>, norint ją pakeisti, naudojamas metodas <i>whereFPackagesOff()</i>;</li>
+    <li>Jeigu <i>fPackagesOn</i> reikšmė yra <i>true</i>, klasės gali turėti priklausomybes savo paketo ribose, pagal priklausomybių
+    kryptį subpaketuose ir (arba) tėviniuose paketuose, seserinių paketų aukščiausiuose sluoksniuose, leistinų FPackages aukščiausiuose sluoksniuose;</li>
+    <li>Jeigu <i>FPackagesOn</i> reikšmė yra <i>false</i>, klasės gali turėti priklausomybes savo paketo ribose, pagal priklausomybių
+    kryptį subpaketuose ir (arba) tėviniuose paketuose, seserinių paketų aukščiausiuose sluoksniuose.</li>
+</ul>
 
 Validuojamos taisyklės:
 <ul>
