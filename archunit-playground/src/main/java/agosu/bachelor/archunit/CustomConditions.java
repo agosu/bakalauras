@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static agosu.bachelor.archunit.Utils.*;
-import static com.tngtech.archunit.lang.conditions.ArchConditions.onlyHaveDependenciesWhere;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
@@ -81,7 +80,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies in subpackages",
+                                            "Class %s depends on subpackages",
                                             clazz.getName()
                                     )
                             )
@@ -117,7 +116,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies in ancestor packages",
+                                            "Class %s depends on ancestor packages",
                                             clazz.getName()
                                     )
                             )
@@ -144,7 +143,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies outside of it's package",
+                                            "Class %s depends on classes outside of it's package",
                                             clazz.getName()
                                     )
                             )
@@ -171,7 +170,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies not in it's direct parent package",
+                                            "Class %s depends on classes not in it's direct parent package",
                                             clazz.getName()
                                     )
                             )
@@ -198,7 +197,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies not in it's direct subpackage",
+                                            "Class %s depends on classes not in it's direct subpackage",
                                             clazz.getName()
                                     )
                             )
@@ -225,7 +224,7 @@ public class CustomConditions {
                             SimpleConditionEvent.violated(
                                     clazz,
                                     format(
-                                            "Class %s has dependencies not in upper layer of a sibling package",
+                                            "Class %s depends on classes not in upper layer of a sibling package",
                                             clazz.getName()
                                     )
                             )
